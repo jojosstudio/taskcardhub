@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0f18">
+  <title>Server nicht erreichbar · Taskcard Hub</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --background: #0b0f18;
+      --surface: #121a2a;
+      --border: #26344a;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --blue: #2563eb;
+      --blue-soft: #172746;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: var(--background);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .card {
+      width: min(460px, 100%);
+      padding: 38px;
+      text-align: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .28);
+    }
+
+    .logo {
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      background: var(--blue);
+      color: white;
+      font: 28px Georgia, serif;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: #60a5fa;
+      font: 600 11px monospace;
+      letter-spacing: 1.7px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 7vw, 40px);
+      letter-spacing: -1.5px;
+      line-height: 1.08;
+    }
+
+    p {
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 26px;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--blue-soft);
+      color: #93c5fd;
+      font-size: 12px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #f59e0b;
+      box-shadow: 0 0 0 4px #f59e0b22;
+    }
+
+    .footer {
+      margin-top: 30px;
+      color: #6b7280;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="logo">T</div>
+    <p class="eyebrow">TASKCARD HUB</p>
+    <h1>Server nicht erreichbar</h1>
+    <p>Die Taskcard-Sammlung ist momentan nicht verfügbar. Bitte versuchen Sie es später erneut oder melden Sie sich bei einem Admin.</p>
+    <div class="status"><span class="dot"></span> Verbindung wird geprüft</div>
+    <div class="footer">Made by Lenodro &amp; Jojosstudio</div>
+  </main>
+</body>
+</html>

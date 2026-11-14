@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Taskcard {
+  id          String   @id @default(cuid())
+  title       String
+  subject     String
+  grade       String   @default("")
+  course      String
+  topic       String
+  url         String
+  description String?
+  confirmed   Boolean  @default(false)
+  createdBy   String
+  createdByName String   @default("Unbekannt")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  teachers    Teacher[] @relation("TaskcardTeachers")
+  reports     Report[]
+  events      AnalyticsEvent[]
+}
+
+model Teacher {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  taskcards Taskcard[] @relation("TaskcardTeachers")
+}
+
+model Report {
+  id         String    @id @default(cuid())
+  taskcardId String
+  reporterId String
+  reason     String
+  message    String
+  status     String    @default("open")
+  adminNote  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  taskcard   Taskcard  @relation(fields: [taskcardId], references: [id], onDelete: Cascade)
+}
+
+model AnalyticsEvent {
+  id         String    @id @default(cuid())
+  type       String
+  taskcardId String?
+  userId     String
+  createdAt  DateTime  @default(now())
+  taskcard   Taskcard? @relation(fields: [taskcardId], references: [id], onDelete: SetNull)
+
+  @@index([type, createdAt])
+  @@index([taskcardId, createdAt])
+}

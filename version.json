@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "build": 1,
+  "title": "Taskcard Hub Alpha",
+  "notes": [
+    "Animierte Bottom-Navigation",
+    "Pull-to-refresh und Offline-Ansicht",
+    "Profil-Einstellungen und Entwicklerbereich"
+  ],
+  "downloadUrl": "https://github.com/jojosstudio/taskcardhub/releases/latest"
+}
