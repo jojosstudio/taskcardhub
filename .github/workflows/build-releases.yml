@@ -28,15 +28,17 @@ jobs:
 
       - name: Install Dependencies
         run: flutter pub get
+        working-directory: taskcard-hub-flutter
 
       - name: Build Release APK
         run: flutter build apk --release
+        working-directory: taskcard-hub-flutter
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: taskcard-hub-flutter/build/app/outputs/flutter-apk/app-release.apk
 
   build-ios:
     name: Build Unsigned iOS App
@@ -53,17 +55,19 @@ jobs:
 
       - name: Install Dependencies
         run: flutter pub get
+        working-directory: taskcard-hub-flutter
 
       - name: Build iOS App (Unsigned)
         run: flutter build ios --release --no-codesign
+        working-directory: taskcard-hub-flutter
 
       - name: Archive iOS Build Output
         run: |
-          cd build/ios/iphoneos
-          zip -r Runner.zip Runner.app
+          cd taskcard-hub-flutter/build/ios/iphoneos
+          zip -r TaskcardHub-unsigned-ios.zip Runner.app
 
       - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-unsigned-ios
-          path: build/ios/iphoneos/Runner.zip
+          path: taskcard-hub-flutter/build/ios/iphoneos/TaskcardHub-unsigned-ios.zip
