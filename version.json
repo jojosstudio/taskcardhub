@@ -1,11 +1,13 @@
 {
-  "version": "1.0.0",
-  "build": 1,
-  "title": "Taskcard Hub Alpha",
+  "version": "1.0.1",
+  "build": 2,
+  "title": "Taskcard Hub 1.0.1",
   "notes": [
-    "Animierte Bottom-Navigation",
-    "Pull-to-refresh und Offline-Ansicht",
-    "Profil-Einstellungen und Entwicklerbereich"
+    "Admin-Bereich mit Analytics und Moderation",
+    "Taskcards bestätigen oder sicher löschen",
+    "Meldungen prüfen und Admin-Notizen verwalten",
+    "Halbtransparente Navigation mit Blur-Effekt",
+    "Changelog direkt in der App"
   ],
   "downloadUrl": "https://github.com/jojosstudio/taskcardhub/releases/latest"
 }

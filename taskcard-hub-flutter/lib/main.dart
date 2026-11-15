@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui' as ui;
 
 import 'package:clerk_native/clerk_native.dart';
 import 'package:clerk_native_ui/clerk_native_ui.dart';
@@ -11,8 +12,9 @@ const _publishableKey = String.fromEnvironment(
   defaultValue: 'pk_live_Y2xlcmsuam9qb3NzdHVkaW8uZGUk',
 );
 const _apiBase = 'https://hub.jojosstudio.de';
-const _currentVersion = '1.0.0';
-const _versionManifestUrl = 'https://raw.githubusercontent.com/jojosstudio/taskcardhub/main/version.json';
+const _currentVersion = '1.0.1';
+const _versionManifestUrl =
+    'https://raw.githubusercontent.com/jojosstudio/taskcardhub/main/version.json';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -93,11 +95,22 @@ class ClerkSetupError extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.lock_outline, size: 52, color: Color(0xFF60A5FA)),
+              const Icon(
+                Icons.lock_outline,
+                size: 52,
+                color: Color(0xFF60A5FA),
+              ),
               const SizedBox(height: 18),
-              const Text('Clerk konnte nicht geladen werden', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text(
+                'Clerk konnte nicht geladen werden',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 10),
-              Text('$error', textAlign: TextAlign.center, style: const TextStyle(color: Colors.white60)),
+              Text(
+                '$error',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white60),
+              ),
             ],
           ),
         ),
@@ -113,8 +126,12 @@ class LoadingScreen extends StatefulWidget {
   State<LoadingScreen> createState() => _LoadingScreenState();
 }
 
-class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500))..repeat();
+class _LoadingScreenState extends State<LoadingScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1500),
+  )..repeat();
 
   @override
   void dispose() {
@@ -135,7 +152,10 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
               children: [
                 Transform.rotate(angle: _controller.value * 0.18, child: child),
                 const SizedBox(height: 18),
-                const Text('Taskcard Hub wird geladen ...', style: TextStyle(color: Colors.white60)),
+                const Text(
+                  'Taskcard Hub wird geladen ...',
+                  style: TextStyle(color: Colors.white60),
+                ),
               ],
             ),
           ),
@@ -174,7 +194,10 @@ class Taskcard {
       createdByName: json['createdByName'] as String? ?? 'Unbekannter Nutzer',
       description: json['description'] as String?,
       teachers: (json['teachers'] as List<dynamic>? ?? [])
-          .map((teacher) => (teacher as Map<String, dynamic>)['name'] as String? ?? '')
+          .map(
+            (teacher) =>
+                (teacher as Map<String, dynamic>)['name'] as String? ?? '',
+          )
           .where((name) => name.isNotEmpty)
           .toList(),
     );
@@ -207,8 +230,12 @@ class AppUpdateInfo {
       version: json['version'] as String? ?? _currentVersion,
       build: json['build'] as int? ?? 0,
       title: json['title'] as String? ?? 'Taskcard Hub Update',
-      notes: (json['notes'] as List<dynamic>? ?? []).whereType<String>().toList(),
-      downloadUrl: json['downloadUrl'] as String? ?? 'https://github.com/jojosstudio/taskcardhub/releases/latest',
+      notes: (json['notes'] as List<dynamic>? ?? [])
+          .whereType<String>()
+          .toList(),
+      downloadUrl:
+          json['downloadUrl'] as String? ??
+          'https://github.com/jojosstudio/taskcardhub/releases/latest',
     );
   }
 
@@ -222,16 +249,23 @@ class AppUpdateInfo {
 }
 
 Future<AppUpdateInfo> checkForAppUpdate() async {
-  final response = await http.get(Uri.parse(_versionManifestUrl)).timeout(const Duration(seconds: 8));
+  final response = await http
+      .get(Uri.parse(_versionManifestUrl))
+      .timeout(const Duration(seconds: 8));
   if (response.statusCode != 200) {
     throw Exception('Versionsprüfung fehlgeschlagen (${response.statusCode}).');
   }
-  return AppUpdateInfo.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  return AppUpdateInfo.fromJson(
+    jsonDecode(response.body) as Map<String, dynamic>,
+  );
 }
 
 int _compareVersions(String first, String second) {
   final left = first.split('.').map((part) => int.tryParse(part) ?? 0).toList();
-  final right = second.split('.').map((part) => int.tryParse(part) ?? 0).toList();
+  final right = second
+      .split('.')
+      .map((part) => int.tryParse(part) ?? 0)
+      .toList();
   for (var index = 0; index < 3; index++) {
     final leftPart = index < left.length ? left[index] : 0;
     final rightPart = index < right.length ? right[index] : 0;
@@ -241,16 +275,21 @@ int _compareVersions(String first, String second) {
 }
 
 class TaskcardApi {
-  static Future<List<Taskcard>> loadCards() async {
+  static Future<TaskcardCollection> loadCards() async {
     final response = await http.get(Uri.parse('$_apiBase/api/taskcards'));
     if (response.statusCode != 200) {
-      throw Exception('Taskcards konnten nicht geladen werden (${response.statusCode}).');
+      throw Exception(
+        'Taskcards konnten nicht geladen werden (${response.statusCode}).',
+      );
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
-    return (data['cards'] as List<dynamic>)
-        .map((card) => Taskcard.fromJson(card as Map<String, dynamic>))
-        .toList();
+    return TaskcardCollection(
+      cards: (data['cards'] as List<dynamic>)
+          .map((card) => Taskcard.fromJson(card as Map<String, dynamic>))
+          .toList(),
+      canManage: data['canManage'] as bool? ?? false,
+    );
   }
 
   static Future<void> createCard(Map<String, String> form) async {
@@ -258,14 +297,182 @@ class TaskcardApi {
     if (token == null) throw Exception('Bitte melde dich zuerst an.');
     final response = await http.post(
       Uri.parse('$_apiBase/api/taskcards'),
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
       body: jsonEncode(form),
     );
     if (response.statusCode != 201) {
       final data = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(data['error'] as String? ?? 'Taskcard konnte nicht gespeichert werden.');
+      throw Exception(
+        data['error'] as String? ?? 'Taskcard konnte nicht gespeichert werden.',
+      );
     }
   }
+
+  static Future<void> setConfirmed(String id, bool confirmed) async {
+    final response = await _authorizedRequest(
+      'PATCH',
+      '/api/taskcards/$id',
+      body: {'confirmed': confirmed},
+    );
+    if (response.statusCode != 200) {
+      _throwApiError(response, 'Status konnte nicht geändert werden.');
+    }
+  }
+
+  static Future<void> deleteCard(String id) async {
+    final response = await _authorizedRequest('DELETE', '/api/taskcards/$id');
+    if (response.statusCode != 204) {
+      _throwApiError(response, 'Taskcard konnte nicht gelöscht werden.');
+    }
+  }
+
+  static Future<AdminSnapshot> loadAdminSnapshot() async {
+    final analytics = await _authorizedRequest('GET', '/api/analytics');
+    if (analytics.statusCode != 200) {
+      _throwApiError(analytics, 'Admin-Daten konnten nicht geladen werden.');
+    }
+    final reports = await _authorizedRequest('GET', '/api/reports');
+    if (reports.statusCode != 200) {
+      _throwApiError(reports, 'Meldungen konnten nicht geladen werden.');
+    }
+    return AdminSnapshot.fromJson(
+      jsonDecode(analytics.body) as Map<String, dynamic>,
+      jsonDecode(reports.body) as List<dynamic>,
+    );
+  }
+
+  static Future<void> updateReport(
+    String id,
+    String status,
+    String adminNote,
+  ) async {
+    final response = await _authorizedRequest(
+      'PATCH',
+      '/api/reports/$id',
+      body: {'status': status, 'adminNote': adminNote},
+    );
+    if (response.statusCode != 200) {
+      _throwApiError(response, 'Meldung konnte nicht aktualisiert werden.');
+    }
+  }
+
+  static Future<http.Response> _authorizedRequest(
+    String method,
+    String path, {
+    Object? body,
+  }) async {
+    final token = await Clerk.instance.getToken();
+    if (token == null) throw Exception('Bitte melde dich zuerst an.');
+    final headers = <String, String>{'Authorization': 'Bearer $token'};
+    if (body != null) headers['Content-Type'] = 'application/json';
+    final request = http.Request(method, Uri.parse('$_apiBase$path'))
+      ..headers.addAll(headers)
+      ..body = body == null ? '' : jsonEncode(body);
+    return http.Response.fromStream(await request.send());
+  }
+
+  static Never _throwApiError(http.Response response, String fallback) {
+    try {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      throw Exception(data['error'] as String? ?? fallback);
+    } catch (error) {
+      if (error is Exception) rethrow;
+      throw Exception(fallback);
+    }
+  }
+}
+
+class TaskcardCollection {
+  const TaskcardCollection({required this.cards, required this.canManage});
+
+  final List<Taskcard> cards;
+  final bool canManage;
+}
+
+class AdminSnapshot {
+  const AdminSnapshot({
+    required this.totals,
+    required this.unconfirmed,
+    required this.reports,
+  });
+
+  factory AdminSnapshot.fromJson(
+    Map<String, dynamic> analytics,
+    List<dynamic> reports,
+  ) {
+    final totals = analytics['totals'] as Map<String, dynamic>? ?? {};
+    return AdminSnapshot(
+      totals: AdminTotals(
+        taskcards: totals['taskcards'] as int? ?? 0,
+        openReports: totals['openReports'] as int? ?? 0,
+        activeUsers: totals['activeUsers'] as int? ?? 0,
+        pageViews: totals['pageViews'] as int? ?? 0,
+        linkOpens: totals['linkOpens'] as int? ?? 0,
+      ),
+      unconfirmed: (analytics['unconfirmed'] as List<dynamic>? ?? [])
+          .map((item) => Taskcard.fromJson(item as Map<String, dynamic>))
+          .toList(),
+      reports: reports
+          .map((item) => AdminReport.fromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  final AdminTotals totals;
+  final List<Taskcard> unconfirmed;
+  final List<AdminReport> reports;
+}
+
+class AdminTotals {
+  const AdminTotals({
+    required this.taskcards,
+    required this.openReports,
+    required this.activeUsers,
+    required this.pageViews,
+    required this.linkOpens,
+  });
+
+  final int taskcards;
+  final int openReports;
+  final int activeUsers;
+  final int pageViews;
+  final int linkOpens;
+}
+
+class AdminReport {
+  const AdminReport({
+    required this.id,
+    required this.taskcardTitle,
+    required this.taskcardUrl,
+    required this.reason,
+    required this.message,
+    required this.status,
+    this.adminNote,
+  });
+
+  factory AdminReport.fromJson(Map<String, dynamic> json) {
+    final card = json['taskcard'] as Map<String, dynamic>? ?? {};
+    return AdminReport(
+      id: json['id'] as String? ?? '',
+      taskcardTitle: card['title'] as String? ?? 'Unbekannte Taskcard',
+      taskcardUrl: card['url'] as String? ?? '',
+      reason: json['reason'] as String? ?? '',
+      message: json['message'] as String? ?? '',
+      status: json['status'] as String? ?? 'open',
+      adminNote: json['adminNote'] as String?,
+    );
+  }
+
+  final String id;
+  final String taskcardTitle;
+  final String taskcardUrl;
+  final String reason;
+  final String message;
+  final String status;
+  final String? adminNote;
 }
 
 class TaskcardShell extends StatefulWidget {
@@ -284,7 +491,7 @@ class _TaskcardShellState extends State<TaskcardShell> {
   String _query = '';
   String _subject = 'Alle Fächer';
   String _status = 'Alle Status';
-  late Future<List<Taskcard>> _cards;
+  late Future<TaskcardCollection> _cards;
 
   @override
   void initState() {
@@ -316,7 +523,10 @@ class _TaskcardShellState extends State<TaskcardShell> {
           children: [
             const BrandMark(size: 30),
             const SizedBox(width: 10),
-            Text(titles[_tab], style: const TextStyle(fontWeight: FontWeight.w700)),
+            Text(
+              titles[_tab],
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
           ],
         ),
         backgroundColor: const Color(0xFF0B0F18),
@@ -325,20 +535,34 @@ class _TaskcardShellState extends State<TaskcardShell> {
       ),
       body: Padding(
         padding: const EdgeInsets.only(bottom: 92),
-        child: FutureBuilder<List<Taskcard>>(
+        child: FutureBuilder<TaskcardCollection>(
           future: _cards,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) return const LoadingScreen();
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const LoadingScreen();
+            }
             if (snapshot.hasError) {
               return ErrorPanel(message: '${snapshot.error}', onRetry: _reload);
             }
-            final cards = snapshot.data ?? [];
+            final collection =
+                snapshot.data ??
+                const TaskcardCollection(cards: [], canManage: false);
+            final cards = collection.cards;
             return PageView(
               controller: _pageController,
               physics: const BouncingScrollPhysics(),
               onPageChanged: (index) => setState(() => _tab = index),
               children: [
-                _Refreshable(onRefresh: _reload, child: TaskcardList(cards: cards, query: '', subject: 'Alle Fächer', status: 'Alle Status', onOpen: _openCard)),
+                _Refreshable(
+                  onRefresh: _reload,
+                  child: TaskcardList(
+                    cards: cards,
+                    query: '',
+                    subject: 'Alle Fächer',
+                    status: 'Alle Status',
+                    onOpen: _openCard,
+                  ),
+                ),
                 SearchPage(
                   cards: cards,
                   query: _query,
@@ -352,19 +576,30 @@ class _TaskcardShellState extends State<TaskcardShell> {
                 ),
                 _Refreshable(
                   onRefresh: _reload,
-                  child: AddCardPage(isSignedIn: widget.isSignedIn, onSaved: () {
-                    _reload();
-                    setState(() => _tab = 0);
-                  }),
+                  child: AddCardPage(
+                    isSignedIn: widget.isSignedIn,
+                    onSaved: () {
+                      _reload();
+                      setState(() => _tab = 0);
+                    },
+                  ),
                 ),
-                _Refreshable(onRefresh: _reload, child: ProfilePage(isSignedIn: widget.isSignedIn, displayName: widget.displayName)),
+                _Refreshable(
+                  onRefresh: _reload,
+                  child: ProfilePage(
+                    isSignedIn: widget.isSignedIn,
+                    displayName: widget.displayName,
+                    canManage: collection.canManage,
+                  ),
+                ),
               ],
             );
           },
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        minimum: const EdgeInsets.fromLTRB(8, 0, 8, 6),
         child: FloatingDock(
           selectedIndex: _tab,
           onSelected: (index) => _pageController.animateToPage(
@@ -391,18 +626,31 @@ class _TaskcardShellState extends State<TaskcardShell> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Link nicht bestätigt'),
-          content: const Text('Diese Taskcard wurde noch nicht von einem Lehrer oder Admin geprüft. Der Link kann fehlerhaft oder unsicher sein.'),
+          content: const Text(
+            'Diese Taskcard wurde noch nicht von einem Lehrer oder Admin geprüft. Der Link kann fehlerhaft oder unsicher sein.',
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Abbrechen')),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Trotzdem öffnen')),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Abbrechen'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Trotzdem öffnen'),
+            ),
           ],
         ),
       );
       if (open != true) return;
     }
     final uri = Uri.tryParse(card.url);
-    if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Link konnte nicht geöffnet werden.')));
+    if (uri == null ||
+        !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Link konnte nicht geöffnet werden.')),
+        );
+      }
     }
   }
 }
@@ -478,38 +726,54 @@ class _FloatingDockState extends State<FloatingDock> {
     final width = MediaQuery.sizeOf(context).width - 16;
     final activeIndex = _previewIndex ?? widget.selectedIndex;
     return GestureDetector(
-          onHorizontalDragEnd: (details) {
-            final velocity = details.primaryVelocity ?? 0;
-            if (velocity.abs() > 200) widget.onSwipe(velocity < 0 ? 1 : -1);
-          },
-          onLongPressStart: (details) => setState(() {
-            _isDragging = true;
-            _previewIndex = _indexForX(details.localPosition.dx, width);
-          }),
-          onLongPressMoveUpdate: (details) => setState(() {
-            _previewIndex = _indexForX(details.localPosition.dx, width);
-          }),
-          onLongPressEnd: (_) => _finishDrag(),
-          onLongPressCancel: _finishDrag,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOutCubic,
-            height: _isDragging ? 78 : 68,
-            decoration: BoxDecoration(
-              color: _isDragging ? const Color(0xF21A2944) : const Color(0xEE151F32),
-              borderRadius: BorderRadius.circular(_isDragging ? 28 : 24),
-              border: Border.all(color: _isDragging ? const Color(0x665B9BFF) : const Color(0x334A6FA8)),
-              boxShadow: const [
-                BoxShadow(color: Color(0x66000000), blurRadius: 24, offset: Offset(0, 10)),
-                BoxShadow(color: Color(0x223B82F6), blurRadius: 18),
-              ],
+      onHorizontalDragEnd: (details) {
+        final velocity = details.primaryVelocity ?? 0;
+        if (velocity.abs() > 200) widget.onSwipe(velocity < 0 ? 1 : -1);
+      },
+      onLongPressStart: (details) => setState(() {
+        _isDragging = true;
+        _previewIndex = _indexForX(details.localPosition.dx, width);
+      }),
+      onLongPressMoveUpdate: (details) => setState(() {
+        _previewIndex = _indexForX(details.localPosition.dx, width);
+      }),
+      onLongPressEnd: (_) => _finishDrag(),
+      onLongPressCancel: _finishDrag,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        height: _isDragging ? 78 : 68,
+        decoration: BoxDecoration(
+          color: _isDragging
+              ? const Color(0xB81A2944)
+              : const Color(0x99151F32),
+          borderRadius: BorderRadius.circular(_isDragging ? 28 : 24),
+          border: Border.all(
+            color: _isDragging
+                ? const Color(0x665B9BFF)
+                : const Color(0x334A6FA8),
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x66000000),
+              blurRadius: 24,
+              offset: Offset(0, 10),
             ),
+            BoxShadow(color: Color(0x223B82F6), blurRadius: 18),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(_isDragging ? 28 : 24),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 for (var index = 0; index < destinations.length; index++)
                   _DockItem(
-                    icon: activeIndex == index ? destinations[index].$2 : destinations[index].$1,
+                    icon: activeIndex == index
+                        ? destinations[index].$2
+                        : destinations[index].$1,
                     label: destinations[index].$3,
                     selected: activeIndex == index,
                     onTap: () => widget.onSelected(index),
@@ -517,6 +781,8 @@ class _FloatingDockState extends State<FloatingDock> {
               ],
             ),
           ),
+        ),
+      ),
     );
   }
 }
@@ -552,14 +818,21 @@ class _DockItem extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, size: 21, color: selected ? Colors.white : Colors.white70),
+                Icon(
+                  icon,
+                  size: 21,
+                  color: selected ? Colors.white : Colors.white70,
+                ),
                 if (selected) ...[
                   const SizedBox(width: 7),
                   Flexible(
                     child: Text(
                       label,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -591,16 +864,22 @@ class TaskcardList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final filtered = cards.where((card) {
-      final haystack = '${card.title} ${card.subject} ${card.course} ${card.topic} ${card.teachers.join(' ')}'.toLowerCase();
+      final haystack =
+          '${card.title} ${card.subject} ${card.course} ${card.topic} ${card.teachers.join(' ')}'
+              .toLowerCase();
       return haystack.contains(query.toLowerCase()) &&
           (subject == 'Alle Fächer' || card.subject == subject) &&
-          (status == 'Alle Status' || (status == 'Bestätigt' ? card.confirmed : !card.confirmed));
+          (status == 'Alle Status' ||
+              (status == 'Bestätigt' ? card.confirmed : !card.confirmed));
     }).toList();
-    if (filtered.isEmpty) return const Center(child: Text('Keine Taskcards gefunden.'));
+    if (filtered.isEmpty) {
+      return const Center(child: Text('Keine Taskcards gefunden.'));
+    }
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       itemCount: filtered.length,
-      itemBuilder: (context, index) => TaskcardTile(card: filtered[index], onOpen: onOpen),
+      itemBuilder: (context, index) =>
+          TaskcardTile(card: filtered[index], onOpen: onOpen),
     );
   }
 }
@@ -635,7 +914,9 @@ class TaskcardTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = card.confirmed ? const Color(0xFF34D399) : const Color(0xFFFBBF24);
+    final color = card.confirmed
+        ? const Color(0xFF34D399)
+        : const Color(0xFFFBBF24);
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       color: const Color(0xFF121A2A),
@@ -646,25 +927,62 @@ class TaskcardTile extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(child: Text(card.subject, style: const TextStyle(color: Color(0xFF60A5FA), fontWeight: FontWeight.w700))),
-                Icon(card.confirmed ? Icons.verified : Icons.schedule, size: 16, color: color),
+                Expanded(
+                  child: Text(
+                    card.subject,
+                    style: const TextStyle(
+                      color: Color(0xFF60A5FA),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Icon(
+                  card.confirmed ? Icons.verified : Icons.schedule,
+                  size: 16,
+                  color: color,
+                ),
                 const SizedBox(width: 4),
-                Text(card.confirmed ? 'Bestätigt' : 'Nicht bestätigt', style: TextStyle(color: color, fontSize: 12)),
+                Text(
+                  card.confirmed ? 'Bestätigt' : 'Nicht bestätigt',
+                  style: TextStyle(color: color, fontSize: 12),
+                ),
               ],
             ),
             const SizedBox(height: 8),
-            Text(card.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              card.title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 5),
-            Text('${card.grade} · ${card.course} · ${card.topic}', style: const TextStyle(color: Colors.white60, fontSize: 13)),
+            Text(
+              '${card.grade} · ${card.course} · ${card.topic}',
+              style: const TextStyle(color: Colors.white60, fontSize: 13),
+            ),
             if (card.description?.isNotEmpty == true) ...[
               const SizedBox(height: 8),
-              Text(card.description!, style: const TextStyle(color: Colors.white70)),
+              Text(
+                card.description!,
+                style: const TextStyle(color: Colors.white70),
+              ),
             ],
             const SizedBox(height: 10),
-            Text('Hinzugefügt von ${card.createdByName}', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+            Text(
+              'Hinzugefügt von ${card.createdByName}',
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            ),
             if (card.teachers.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Wrap(spacing: 6, children: card.teachers.map((teacher) => Chip(label: Text(teacher), visualDensity: VisualDensity.compact)).toList()),
+              Wrap(
+                spacing: 6,
+                children: card.teachers
+                    .map(
+                      (teacher) => Chip(
+                        label: Text(teacher),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    )
+                    .toList(),
+              ),
             ],
             const SizedBox(height: 8),
             Align(
@@ -708,35 +1026,103 @@ class SearchPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subjects = ['Alle Fächer', ...cards.map((card) => card.subject).where((item) => item.isNotEmpty).toSet()];
+    final subjects = [
+      'Alle Fächer',
+      ...cards
+          .map((card) => card.subject)
+          .where((item) => item.isNotEmpty)
+          .toSet(),
+    ];
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: TextField(
             onChanged: onQuery,
-            decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Thema, Kurs oder Lehrkraft suchen'),
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search),
+              hintText: 'Thema, Kurs oder Lehrkraft suchen',
+            ),
           ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              Expanded(child: DropdownButtonFormField<String>(isExpanded: true, initialValue: subject, items: subjects.map((value) => DropdownMenuItem(value: value, child: Text(value, overflow: TextOverflow.ellipsis))).toList(), onChanged: (value) { if (value != null) onSubject(value); })),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  initialValue: subject,
+                  items: subjects
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(value, overflow: TextOverflow.ellipsis),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null) onSubject(value);
+                  },
+                ),
+              ),
               const SizedBox(width: 8),
-              Expanded(child: DropdownButtonFormField<String>(isExpanded: true, initialValue: status, items: const [DropdownMenuItem(value: 'Alle Status', child: Text('Alle Status', overflow: TextOverflow.ellipsis)), DropdownMenuItem(value: 'Bestätigt', child: Text('Bestätigt', overflow: TextOverflow.ellipsis)), DropdownMenuItem(value: 'Nicht bestätigt', child: Text('Nicht bestätigt', overflow: TextOverflow.ellipsis))], onChanged: (value) { if (value != null) onStatus(value); })),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  initialValue: status,
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'Alle Status',
+                      child: Text(
+                        'Alle Status',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Bestätigt',
+                      child: Text('Bestätigt', overflow: TextOverflow.ellipsis),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Nicht bestätigt',
+                      child: Text(
+                        'Nicht bestätigt',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) onStatus(value);
+                  },
+                ),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 8),
-        Expanded(child: _Refreshable(onRefresh: onRefresh, child: TaskcardList(cards: cards, query: query, subject: subject, status: status, onOpen: onOpen))),
+        Expanded(
+          child: _Refreshable(
+            onRefresh: onRefresh,
+            child: TaskcardList(
+              cards: cards,
+              query: query,
+              subject: subject,
+              status: status,
+              onOpen: onOpen,
+            ),
+          ),
+        ),
       ],
     );
   }
 }
 
 class AddCardPage extends StatefulWidget {
-  const AddCardPage({super.key, required this.isSignedIn, required this.onSaved});
+  const AddCardPage({
+    super.key,
+    required this.isSignedIn,
+    required this.onSaved,
+  });
 
   final bool isSignedIn;
   final VoidCallback onSaved;
@@ -747,7 +1133,19 @@ class AddCardPage extends StatefulWidget {
 
 class _AddCardPageState extends State<AddCardPage> {
   final _formKey = GlobalKey<FormState>();
-  final _controllers = {for (final field in ['title', 'subject', 'grade', 'course', 'topic', 'teachers', 'url', 'description']) field: TextEditingController()};
+  final _controllers = {
+    for (final field in [
+      'title',
+      'subject',
+      'grade',
+      'course',
+      'topic',
+      'teachers',
+      'url',
+      'description',
+    ])
+      field: TextEditingController(),
+  };
   bool _saving = false;
 
   @override
@@ -761,37 +1159,87 @@ class _AddCardPageState extends State<AddCardPage> {
   @override
   Widget build(BuildContext context) {
     if (!widget.isSignedIn) {
-      return Center(child: Padding(padding: const EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.lock_outline, size: 52, color: Color(0xFF60A5FA)),
-        const SizedBox(height: 14),
-        const Text('Anmelden zum Hinzufügen', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        const Text('Melde dich mit Clerk an, um eine Taskcard zu speichern.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white60)),
-        const SizedBox(height: 18),
-        FilledButton.icon(onPressed: () => _openAuth(context), icon: const Icon(Icons.login), label: const Text('Mit Clerk anmelden')),
-      ])));
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.lock_outline,
+                size: 52,
+                color: Color(0xFF60A5FA),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Anmelden zum Hinzufügen',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Melde dich mit Clerk an, um eine Taskcard zu speichern.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white60),
+              ),
+              const SizedBox(height: 18),
+              FilledButton.icon(
+                onPressed: () => _openAuth(context),
+                icon: const Icon(Icons.login),
+                label: const Text('Mit Clerk anmelden'),
+              ),
+            ],
+          ),
+        ),
+      );
     }
     return Form(
       key: _formKey,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          const Text('Neue Taskcard', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          const Text(
+            'Neue Taskcard',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 6),
-          const Text('Füge eine geprüfte Sammlung für alle hinzu.', style: TextStyle(color: Colors.white60)),
+          const Text(
+            'Füge eine geprüfte Sammlung für alle hinzu.',
+            style: TextStyle(color: Colors.white60),
+          ),
           const SizedBox(height: 18),
-          for (final entry in {'title': 'Titel', 'subject': 'Fach', 'grade': 'Stufe / Klasse', 'course': 'Kurs', 'topic': 'Thema', 'teachers': 'Lehrkräfte (mehrere mit Komma)', 'url': 'Taskcard-Link', 'description': 'Kurzbeschreibung (optional)'}.entries)
+          for (final entry in {
+            'title': 'Titel',
+            'subject': 'Fach',
+            'grade': 'Stufe / Klasse',
+            'course': 'Kurs',
+            'topic': 'Thema',
+            'teachers': 'Lehrkräfte (mehrere mit Komma)',
+            'url': 'Taskcard-Link',
+            'description': 'Kurzbeschreibung (optional)',
+          }.entries)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: TextFormField(
                 controller: _controllers[entry.key],
                 maxLines: entry.key == 'description' ? 3 : 1,
-                keyboardType: entry.key == 'url' ? TextInputType.url : TextInputType.text,
-                validator: entry.key == 'description' ? null : (value) => value == null || value.trim().isEmpty ? 'Pflichtfeld' : null,
+                keyboardType: entry.key == 'url'
+                    ? TextInputType.url
+                    : TextInputType.text,
+                validator: entry.key == 'description'
+                    ? null
+                    : (value) => value == null || value.trim().isEmpty
+                          ? 'Pflichtfeld'
+                          : null,
                 decoration: InputDecoration(labelText: entry.value),
               ),
             ),
-          FilledButton.icon(onPressed: _saving ? null : _save, icon: const Icon(Icons.save_outlined), label: Text(_saving ? 'Wird gespeichert ...' : 'Taskcard speichern')),
+          FilledButton.icon(
+            onPressed: _saving ? null : _save,
+            icon: const Icon(Icons.save_outlined),
+            label: Text(
+              _saving ? 'Wird gespeichert ...' : 'Taskcard speichern',
+            ),
+          ),
         ],
       ),
     );
@@ -801,13 +1249,22 @@ class _AddCardPageState extends State<AddCardPage> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
-      await TaskcardApi.createCard(_controllers.map((key, controller) => MapEntry(key, controller.text.trim())));
+      await TaskcardApi.createCard(
+        _controllers.map(
+          (key, controller) => MapEntry(key, controller.text.trim()),
+        ),
+      );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Taskcard wurde gespeichert.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Taskcard wurde gespeichert.')),
+        );
         widget.onSaved();
       }
     } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$error')));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$error')));
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -815,10 +1272,16 @@ class _AddCardPageState extends State<AddCardPage> {
 }
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key, required this.isSignedIn, this.displayName});
+  const ProfilePage({
+    super.key,
+    required this.isSignedIn,
+    this.displayName,
+    this.canManage = false,
+  });
 
   final bool isSignedIn;
   final String? displayName;
+  final bool canManage;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -830,38 +1293,137 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     if (!widget.isSignedIn) {
-      return Center(child: Padding(padding: const EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [
-        const CircleAvatar(radius: 34, backgroundColor: Color(0xFF1D4ED8), child: Icon(Icons.person_outline, size: 34)),
-        const SizedBox(height: 14),
-        const Text('Willkommen bei Taskcard Hub', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        const Text('Melde dich mit Clerk an, um Taskcards hinzuzufügen und zu melden.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white60)),
-        const SizedBox(height: 18),
-        FilledButton.icon(onPressed: () => _openAuth(context), icon: const Icon(Icons.login), label: const Text('Anmelden / Registrieren')),
-      ])));
-    }
-    return ListView(padding: const EdgeInsets.all(16), children: [
-      GestureDetector(
-        onLongPress: () => setState(() {
-          _developerMode = true;
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Entwicklermodus aktiviert.')));
-        }),
-        child: Card(color: const Color(0xFF121A2A), child: ListTile(leading: const CircleAvatar(backgroundColor: Color(0xFF2563EB), child: Icon(Icons.person)), title: Text(widget.displayName ?? 'Nutzer'), subtitle: const Text('Mit Clerk angemeldet'), trailing: const Icon(Icons.verified, color: Color(0xFF34D399)))),
-      ),
-      const SizedBox(height: 12),
-      ListTile(leading: const Icon(Icons.manage_accounts), title: const Text('Konto verwalten'), subtitle: const Text('E-Mail, Passwort und Sitzungen'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => Scaffold(appBar: AppBar(title: const Text('Konto')), body: const SafeArea(child: ClerkUserProfileView()))))),
-      ListTile(leading: const Icon(Icons.tune), title: const Text('App-Einstellungen'), subtitle: const Text('Darstellung, Verhalten und Datenschutz'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AppSettingsPage()))),
-      ListTile(leading: const Icon(Icons.info_outline), title: const Text('Über Taskcard Hub'), subtitle: const Text('Version, Credits und Hinweise'), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AppInfoPage()))),
-      ListTile(leading: const Icon(Icons.system_update_alt, color: Color(0xFF60A5FA)), title: const Text('Nach Updates suchen'), subtitle: const Text('Aktuelle Version prüfen'), onTap: () => _checkForUpdates(context)),
-      if (_developerMode)
-        ListTile(
-          leading: const Icon(Icons.code, color: Color(0xFF60A5FA)),
-          title: const Text('Entwicklermodus', style: TextStyle(color: Color(0xFF60A5FA))),
-          subtitle: const Text('Diagnose und versteckte Funktionen'),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DeveloperPage())),
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircleAvatar(
+                radius: 34,
+                backgroundColor: Color(0xFF1D4ED8),
+                child: Icon(Icons.person_outline, size: 34),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Willkommen bei Taskcard Hub',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Melde dich mit Clerk an, um Taskcards hinzuzufügen und zu melden.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white60),
+              ),
+              const SizedBox(height: 18),
+              FilledButton.icon(
+                onPressed: () => _openAuth(context),
+                icon: const Icon(Icons.login),
+                label: const Text('Anmelden / Registrieren'),
+              ),
+            ],
+          ),
         ),
-      ListTile(leading: const Icon(Icons.logout), title: const Text('Abmelden'), onTap: () => Clerk.instance.signOut()),
-    ]);
+      );
+    }
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        GestureDetector(
+          onLongPress: () => setState(() {
+            _developerMode = true;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Entwicklermodus aktiviert.')),
+            );
+          }),
+          child: Card(
+            color: const Color(0xFF121A2A),
+            child: ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Color(0xFF2563EB),
+                child: Icon(Icons.person),
+              ),
+              title: Text(widget.displayName ?? 'Nutzer'),
+              subtitle: const Text('Mit Clerk angemeldet'),
+              trailing: const Icon(Icons.verified, color: Color(0xFF34D399)),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ListTile(
+          leading: const Icon(Icons.manage_accounts),
+          title: const Text('Konto verwalten'),
+          subtitle: const Text('E-Mail, Passwort und Sitzungen'),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => Scaffold(
+                appBar: AppBar(title: const Text('Konto')),
+                body: const SafeArea(child: ClerkUserProfileView()),
+              ),
+            ),
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.tune),
+          title: const Text('App-Einstellungen'),
+          subtitle: const Text('Darstellung, Verhalten und Datenschutz'),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AppSettingsPage()),
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.info_outline),
+          title: const Text('Über Taskcard Hub'),
+          subtitle: const Text('Version, Credits und Hinweise'),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AppInfoPage()),
+          ),
+        ),
+        ListTile(
+          leading: const Icon(
+            Icons.system_update_alt,
+            color: Color(0xFF60A5FA),
+          ),
+          title: const Text('Nach Updates suchen'),
+          subtitle: const Text('Aktuelle Version prüfen'),
+          onTap: () => _checkForUpdates(context),
+        ),
+        if (widget.canManage)
+          ListTile(
+            leading: const Icon(
+              Icons.admin_panel_settings,
+              color: Color(0xFF60A5FA),
+            ),
+            title: const Text('Admin-Bereich'),
+            subtitle: const Text('Prüfen, melden, löschen und Analytics'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AdminPage()),
+            ),
+          ),
+        if (_developerMode)
+          ListTile(
+            leading: const Icon(Icons.code, color: Color(0xFF60A5FA)),
+            title: const Text(
+              'Entwicklermodus',
+              style: TextStyle(color: Color(0xFF60A5FA)),
+            ),
+            subtitle: const Text('Diagnose und versteckte Funktionen'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DeveloperPage()),
+            ),
+          ),
+        ListTile(
+          leading: const Icon(Icons.logout),
+          title: const Text('Abmelden'),
+          onTap: () => Clerk.instance.signOut(),
+        ),
+      ],
+    );
   }
 
   Future<void> _checkForUpdates(BuildContext context) async {
@@ -869,7 +1431,13 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       barrierDismissible: false,
       builder: (_) => const AlertDialog(
-        content: Row(children: [CircularProgressIndicator(), SizedBox(width: 18), Text('Suche nach Updates ...')]),
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 18),
+            Text('Suche nach Updates ...'),
+          ],
+        ),
       ),
     );
     try {
@@ -877,31 +1445,423 @@ class _ProfilePageState extends State<ProfilePage> {
       if (!context.mounted) return;
       Navigator.pop(context);
       if (!update.isNewer) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Du verwendest bereits die aktuellste Version.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Du verwendest bereits die aktuellste Version.'),
+          ),
+        );
         return;
       }
       final open = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
           title: Text(update.title),
-          content: Text('Version ${update.version} ist verfügbar.\n\n${update.notes.map((note) => '• $note').join('\n')}'),
+          content: Text(
+            'Version ${update.version} ist verfügbar.\n\n${update.notes.map((note) => '• $note').join('\n')}',
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Später')),
-            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Download öffnen')),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Später'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Download öffnen'),
+            ),
           ],
         ),
       );
       if (open == true) {
         final uri = Uri.tryParse(update.downloadUrl);
-        if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Download konnte nicht geöffnet werden.')));
+        if (uri == null ||
+            !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Download konnte nicht geöffnet werden.'),
+              ),
+            );
+          }
         }
       }
     } catch (error) {
       if (!context.mounted) return;
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$error')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$error')));
     }
+  }
+}
+
+class AdminPage extends StatefulWidget {
+  const AdminPage({super.key});
+
+  @override
+  State<AdminPage> createState() => _AdminPageState();
+}
+
+class _AdminPageState extends State<AdminPage> {
+  late Future<AdminSnapshot> _snapshot;
+
+  @override
+  void initState() {
+    super.initState();
+    _snapshot = TaskcardApi.loadAdminSnapshot();
+  }
+
+  void _reload() => setState(() => _snapshot = TaskcardApi.loadAdminSnapshot());
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Admin-Bereich'),
+        actions: [
+          IconButton(
+            onPressed: _reload,
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Aktualisieren',
+          ),
+        ],
+      ),
+      body: FutureBuilder<AdminSnapshot>(
+        future: _snapshot,
+        builder: (context, state) {
+          if (state.connectionState == ConnectionState.waiting) {
+            return const LoadingScreen();
+          }
+          if (state.hasError) {
+            return ErrorPanel(message: '${state.error}', onRetry: _reload);
+          }
+          final data = state.data!;
+          return RefreshIndicator(
+            onRefresh: () async {
+              _reload();
+              await _snapshot;
+            },
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+              children: [
+                _AdminStats(totals: data.totals),
+                const SizedBox(height: 22),
+                _AdminSectionTitle(
+                  title: 'Prüfung',
+                  count: data.unconfirmed.length,
+                ),
+                if (data.unconfirmed.isEmpty)
+                  const Card(
+                    child: ListTile(
+                      leading: Icon(Icons.verified, color: Color(0xFF34D399)),
+                      title: Text('Alles geprüft'),
+                      subtitle: Text('Es gibt keine unbestätigten Taskcards.'),
+                    ),
+                  )
+                else
+                  for (final card in data.unconfirmed)
+                    _ReviewCard(card: card, onChanged: _reload),
+                const SizedBox(height: 22),
+                _AdminSectionTitle(
+                  title: 'Meldungen',
+                  count: data.reports
+                      .where((report) => report.status == 'open')
+                      .length,
+                ),
+                if (data.reports.isEmpty)
+                  const Card(
+                    child: ListTile(
+                      leading: Icon(Icons.inbox_outlined),
+                      title: Text('Keine Meldungen'),
+                      subtitle: Text('Aktuell liegen keine Meldungen vor.'),
+                    ),
+                  )
+                else
+                  for (final report in data.reports)
+                    _ReportCard(report: report, onChanged: _reload),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _AdminStats extends StatelessWidget {
+  const _AdminStats({required this.totals});
+
+  final AdminTotals totals;
+
+  @override
+  Widget build(BuildContext context) {
+    final stats = [
+      ('Taskcards', totals.taskcards, Icons.library_books_outlined),
+      ('Offene Meldungen', totals.openReports, Icons.flag_outlined),
+      ('Aktive Nutzer', totals.activeUsers, Icons.people_outline),
+      ('Link-Öffnungen', totals.linkOpens, Icons.open_in_new),
+    ];
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+      childAspectRatio: 1.65,
+      children: stats
+          .map(
+            (stat) => Card(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(stat.$3, color: const Color(0xFF60A5FA), size: 20),
+                    const Spacer(),
+                    Text(
+                      '${stat.$2}',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      stat.$1,
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class _AdminSectionTitle extends StatelessWidget {
+  const _AdminSectionTitle({required this.title, required this.count});
+
+  final String title;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            '$count offen',
+            style: const TextStyle(color: Colors.white60, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewCard extends StatelessWidget {
+  const _ReviewCard({required this.card, required this.onChanged});
+
+  final Taskcard card;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              card.title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              '${card.subject} · ${card.grade} · ${card.course}',
+              style: const TextStyle(color: Colors.white60, fontSize: 12),
+            ),
+            if (card.teachers.isNotEmpty)
+              Text(
+                card.teachers.join(', '),
+                style: const TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final uri = Uri.tryParse(card.url);
+                      if (uri != null) {
+                        await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.open_in_new, size: 16),
+                    label: const Text('Prüfen'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () async {
+                      try {
+                        await TaskcardApi.setConfirmed(card.id, true);
+                        onChanged();
+                      } catch (error) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context)
+                              .showSnackBar(SnackBar(content: Text('$error')));
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.verified, size: 16),
+                    label: const Text('Bestätigen'),
+                  ),
+                ),
+              ],
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => _deleteCard(context),
+                icon: const Icon(Icons.delete_outline, size: 16),
+                label: const Text('Löschen'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteCard(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Taskcard löschen?'),
+        content: Text('„${card.title}“ wird dauerhaft entfernt.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await TaskcardApi.deleteCard(card.id);
+      onChanged();
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$error')));
+      }
+    }
+  }
+}
+
+class _ReportCard extends StatefulWidget {
+  const _ReportCard({required this.report, required this.onChanged});
+
+  final AdminReport report;
+  final VoidCallback onChanged;
+
+  @override
+  State<_ReportCard> createState() => _ReportCardState();
+}
+
+class _ReportCardState extends State<_ReportCard> {
+  late String _status = widget.report.status;
+  late final TextEditingController _note = TextEditingController(
+    text: widget.report.adminNote ?? '',
+  );
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.report.taskcardTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              '${widget.report.reason}: ${widget.report.message}',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              initialValue: _status,
+              decoration: const InputDecoration(labelText: 'Status'),
+              items: const [
+                DropdownMenuItem(value: 'open', child: Text('Offen')),
+                DropdownMenuItem(value: 'in_review', child: Text('In Prüfung')),
+                DropdownMenuItem(value: 'resolved', child: Text('Erledigt')),
+                DropdownMenuItem(value: 'dismissed', child: Text('Verworfen')),
+              ],
+              onChanged: (value) {
+                if (value != null) setState(() => _status = value);
+              },
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _note,
+              maxLines: 2,
+              decoration: const InputDecoration(labelText: 'Admin-Notiz'),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton(
+                onPressed: () async {
+                  try {
+                    await TaskcardApi.updateReport(
+                      widget.report.id,
+                      _status,
+                      _note.text.trim(),
+                    );
+                    widget.onChanged();
+                  } catch (error) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text('$error')));
+                    }
+                  }
+                },
+                child: const Text('Speichern'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -943,7 +1903,9 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
             value: _confirmLinks,
             onChanged: (value) => setState(() => _confirmLinks = value),
             title: const Text('Link-Warnungen anzeigen'),
-            subtitle: const Text('Warnung vor nicht bestätigten Taskcard-Links'),
+            subtitle: const Text(
+              'Warnung vor nicht bestätigten Taskcard-Links',
+            ),
           ),
           const SizedBox(height: 18),
           const _SettingsSectionTitle('Überraschung'),
@@ -955,7 +1917,9 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
               context: context,
               builder: (context) => const AlertDialog(
                 title: Text('✨ Taskcard Hub'),
-                content: Text('Du hast ein kleines Easter Egg gefunden. Danke, dass du den Hub testest!'),
+                content: Text(
+                  'Du hast ein kleines Easter Egg gefunden. Danke, dass du den Hub testest!',
+                ),
               ),
             ),
           ),
@@ -974,7 +1938,15 @@ class _SettingsSectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(title.toUpperCase(), style: const TextStyle(color: Color(0xFF60A5FA), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          color: Color(0xFF60A5FA),
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
+        ),
+      ),
     );
   }
 }
@@ -991,16 +1963,111 @@ class AppInfoPage extends StatelessWidget {
         children: [
           const Center(child: BrandMark(size: 88)),
           const SizedBox(height: 18),
-          const Center(child: Text('Taskcard Hub', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold))),
+          const Center(
+            child: Text(
+              'Taskcard Hub',
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+            ),
+          ),
           const SizedBox(height: 6),
-          const Center(child: Text('Version 1.0.0 · Alpha', style: TextStyle(color: Colors.white60))),
+          const Center(
+            child: Text(
+              'Version 1.0.1 · Alpha',
+              style: TextStyle(color: Colors.white60),
+            ),
+          ),
           const SizedBox(height: 28),
-          const Text('Eine gemeinsame, geordnete Sammlung für Taskcards mit Fächern, Kursen, Themen und Lehrkräften.', style: TextStyle(color: Colors.white70, height: 1.5)),
+          const Text(
+            'Eine gemeinsame, geordnete Sammlung für Taskcards mit Fächern, Kursen, Themen und Lehrkräften.',
+            style: TextStyle(color: Colors.white70, height: 1.5),
+          ),
           const SizedBox(height: 24),
-          const ListTile(leading: Icon(Icons.verified_user, color: Color(0xFF34D399)), title: Text('Moderierte Links'), subtitle: Text('Bestätigte und nicht bestätigte Taskcards werden klar gekennzeichnet.')),
-          const ListTile(leading: Icon(Icons.language, color: Color(0xFF60A5FA)), title: Text('Taskcard-Hub-Website'), subtitle: Text('Die App gehört zur Website hub.jojosstudio.de und nutzt deren Online-Funktionen.')),
-          const ListTile(leading: Icon(Icons.favorite_outline, color: Color(0xFFF472B6)), title: Text('Credits'), subtitle: Text('Made by Lenodro & Jojosstudio · Powered by Clerk')),
+          const ListTile(
+            leading: Icon(Icons.verified_user, color: Color(0xFF34D399)),
+            title: Text('Moderierte Links'),
+            subtitle: Text(
+              'Bestätigte und nicht bestätigte Taskcards werden klar gekennzeichnet.',
+            ),
+          ),
+          const ListTile(
+            leading: Icon(Icons.language, color: Color(0xFF60A5FA)),
+            title: Text('Taskcard-Hub-Website'),
+            subtitle: Text(
+              'Die App gehört zur Website hub.jojosstudio.de und nutzt deren Online-Funktionen.',
+            ),
+          ),
+          const ListTile(
+            leading: Icon(Icons.favorite_outline, color: Color(0xFFF472B6)),
+            title: Text('Credits'),
+            subtitle: Text('Made by Lenodro & Jojosstudio · Powered by Clerk'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.history, color: Color(0xFFFBBF24)),
+            title: const Text('Changelog'),
+            subtitle: const Text('Was ist neu in dieser Version?'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChangelogPage()),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class ChangelogPage extends StatelessWidget {
+  const ChangelogPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Changelog')),
+      body: FutureBuilder<AppUpdateInfo>(
+        future: checkForAppUpdate(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return ErrorPanel(
+              message: '${snapshot.error}',
+              onRetry: () => Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const ChangelogPage()),
+              ),
+            );
+          }
+          final update = snapshot.data!;
+          return ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              Text(
+                update.title,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Version ${update.version} · Build ${update.build}',
+                style: const TextStyle(color: Colors.white60),
+              ),
+              const SizedBox(height: 22),
+              for (final note in update.notes)
+                Card(
+                  child: ListTile(
+                    leading: const Icon(
+                      Icons.check_circle,
+                      color: Color(0xFF34D399),
+                    ),
+                    title: Text(note),
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -1016,10 +2083,27 @@ class DeveloperPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Card(child: ListTile(leading: Icon(Icons.bug_report, color: Color(0xFFFBBF24)), title: Text('Alpha-Diagnose'), subtitle: Text('Interne Testfunktionen sind aktiviert.'))),
+          const Card(
+            child: ListTile(
+              leading: Icon(Icons.bug_report, color: Color(0xFFFBBF24)),
+              title: Text('Alpha-Diagnose'),
+              subtitle: Text('Interne Testfunktionen sind aktiviert.'),
+            ),
+          ),
           const ListTile(title: Text('API'), subtitle: Text(_apiBase)),
-          const ListTile(title: Text('Clerk'), subtitle: Text('Native Session und Token-Integration')),
-          ListTile(leading: const Icon(Icons.celebration, color: Color(0xFFF472B6)), title: const Text('Konfetti-Test'), onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('🎉 Easter Egg erfolgreich ausgelöst!')))),
+          const ListTile(
+            title: Text('Clerk'),
+            subtitle: Text('Native Session und Token-Integration'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.celebration, color: Color(0xFFF472B6)),
+            title: const Text('Konfetti-Test'),
+            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('🎉 Easter Egg erfolgreich ausgelöst!'),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1027,7 +2111,15 @@ class DeveloperPage extends StatelessWidget {
 }
 
 void _openAuth(BuildContext context) {
-  Navigator.push(context, MaterialPageRoute(builder: (_) => Scaffold(appBar: AppBar(title: const Text('Anmelden')), body: const SafeArea(child: ClerkAuthView()))));
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => Scaffold(
+        appBar: AppBar(title: const Text('Anmelden')),
+        body: const SafeArea(child: ClerkAuthView()),
+      ),
+    ),
+  );
 }
 
 class ErrorPanel extends StatefulWidget {
@@ -1040,8 +2132,12 @@ class ErrorPanel extends StatefulWidget {
   State<ErrorPanel> createState() => _ErrorPanelState();
 }
 
-class _ErrorPanelState extends State<ErrorPanel> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))..repeat(reverse: true);
+class _ErrorPanelState extends State<ErrorPanel>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat(reverse: true);
 
   @override
   void dispose() {
@@ -1056,17 +2152,31 @@ class _ErrorPanelState extends State<ErrorPanel> with SingleTickerProviderStateM
         padding: const EdgeInsets.all(24),
         child: AnimatedBuilder(
           animation: _controller,
-          builder: (context, child) => Transform.scale(scale: 0.96 + (_controller.value * 0.04), child: child),
+          builder: (context, child) => Transform.scale(
+            scale: 0.96 + (_controller.value * 0.04),
+            child: child,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.cloud_off, size: 58, color: Color(0xFF60A5FA)),
               const SizedBox(height: 16),
-              const Text('Keine Internetverbindung', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text(
+                'Keine Internetverbindung',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
-              Text(widget.message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white60)),
+              Text(
+                widget.message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white60),
+              ),
               const SizedBox(height: 18),
-              FilledButton.icon(onPressed: widget.onRetry, icon: const Icon(Icons.refresh), label: const Text('Erneut versuchen')),
+              FilledButton.icon(
+                onPressed: widget.onRetry,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Erneut versuchen'),
+              ),
             ],
           ),
         ),
