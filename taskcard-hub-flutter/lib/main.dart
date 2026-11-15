@@ -1976,7 +1976,7 @@ class AppInfoPage extends StatelessWidget {
           const SizedBox(height: 6),
           const Center(
             child: Text(
-              'Version 1.0.1 · Alpha',
+              'Version 1.0.2 · Alpha',
               style: TextStyle(color: Colors.white60),
             ),
           ),
