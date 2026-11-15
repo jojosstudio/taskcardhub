@@ -12,7 +12,7 @@ const _publishableKey = String.fromEnvironment(
   defaultValue: 'pk_live_Y2xlcmsuam9qb3NzdHVkaW8uZGUk',
 );
 const _apiBase = 'https://hub.jojosstudio.de';
-const _currentVersion = '1.0.1';
+const _currentVersion = '1.0.2';
 const _versionManifestUrl =
     'https://raw.githubusercontent.com/jojosstudio/taskcardhub/main/version.json';
 

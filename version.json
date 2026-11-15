@@ -1,8 +1,11 @@
 {
-  "version": "1.0.1",
-  "build": 2,
-  "title": "Taskcard Hub 1.0.1",
+  "version": "1.0.2",
+  "build": 3,
+  "title": "Taskcard Hub 1.0.2",
   "notes": [
+    "Android-Startbildschirm-Widget mit aktuellen Taskcards",
+    "Widget zeigt unbestätigte Taskcards und Offline-Status",
+    "Widget-Schnellzugriff zum Öffnen und Suchen",
     "Admin-Bereich mit Analytics und Moderation",
     "Taskcards bestätigen oder sicher löschen",
     "Meldungen prüfen und Admin-Notizen verwalten",
