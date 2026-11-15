@@ -276,7 +276,11 @@ int _compareVersions(String first, String second) {
 
 class TaskcardApi {
   static Future<TaskcardCollection> loadCards() async {
-    final response = await http.get(Uri.parse('$_apiBase/api/taskcards'));
+    final token = await Clerk.instance.getToken();
+    final response = await http.get(
+      Uri.parse('$_apiBase/api/taskcards'),
+      headers: token == null ? null : {'Authorization': 'Bearer $token'},
+    );
     if (response.statusCode != 200) {
       throw Exception(
         'Taskcards konnten nicht geladen werden (${response.statusCode}).',
